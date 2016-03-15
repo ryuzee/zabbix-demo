@@ -1,0 +1,23 @@
+---
+- hosts: zabbix-client
+  become: true
+  tasks:
+  - name: Download package
+    get_url: url=http://repo.zabbix.com/zabbix/3.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_3.0-1+trusty_all.deb dest=/tmp/zabbix.deb mode=0440
+  - name: Install Zabbix Repository
+    apt: deb=/tmp/zabbix.deb
+  - name: Update Cache
+    apt: update_cache=yes
+  - name: Install Packages
+    apt: name={{ item }} state=present
+    with_items:
+      - zabbix-agent
+  - name: Upload Zabbix Agentd Configuration
+    template:
+      src=files/zabbix/zabbix_agentd.conf.j2
+      dest=/etc/zabbix/zabbix_agentd.conf
+      owner=root
+      group=root
+      mode=0644
+  - name: Restart Zabbix Agentd
+    service: name=zabbix-agent state=restarted

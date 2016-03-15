@@ -1,0 +1,57 @@
+# Define /zabbix alias, this is the default
+<IfModule mod_alias.c>
+    Alias /zabbix /usr/share/zabbix
+</IfModule>
+
+<Directory "/usr/share/zabbix">
+    Options FollowSymLinks
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+
+    <IfModule mod_php5.c>
+        php_value max_execution_time {{ php_max_execution_time }}
+        php_value memory_limit {{ php_memory_limit }}
+        php_value post_max_size {{ php_post_max_size }}
+        php_value upload_max_filesize {{ php_upload_max_filesize }}
+        php_value max_input_time {{ php_max_input_time }}
+        php_value always_populate_raw_post_data -1
+        php_value date.timezone {{ php_date_timezone }}
+    </IfModule>
+</Directory>
+
+<Directory "/usr/share/zabbix/conf">
+    Order deny,allow
+    Deny from all
+    <files *.php>
+        Order deny,allow
+        Deny from all
+    </files>
+</Directory>
+
+<Directory "/usr/share/zabbix/app">
+    Order deny,allow
+    Deny from all
+    <files *.php>
+        Order deny,allow
+        Deny from all
+    </files>
+</Directory>
+
+<Directory "/usr/share/zabbix/include">
+    Order deny,allow
+    Deny from all
+    <files *.php>
+        Order deny,allow
+        Deny from all
+    </files>
+</Directory>
+
+<Directory "/usr/share/zabbix/local">
+    Order deny,allow
+    Deny from all
+    <files *.php>
+        Order deny,allow
+        Deny from all
+    </files>
+</Directory>

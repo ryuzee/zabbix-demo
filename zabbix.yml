@@ -1,0 +1,72 @@
+---
+- hosts: zabbix-server
+  become: true
+  tasks:
+  - name: Download package
+    get_url: url=http://repo.zabbix.com/zabbix/3.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_3.0-1+trusty_all.deb dest=/tmp/zabbix.deb mode=0440
+  - name: Install Zabbix Repository
+    apt: deb=/tmp/zabbix.deb
+  - name: Update Cache
+    apt: update_cache=yes
+  - name: Install Packages
+    apt: name={{ item }} state=present
+    with_items:
+      - language-pack-ja
+      - zabbix-server-mysql
+      - zabbix-frontend-php
+  - name: Update Locale
+    command: update-locale LANG=ja_JP.UTF-8
+  - name: Update Zabbix Configuration
+    template:
+      src=files/zabbix/zabbix_server.conf.j2
+      dest=/etc/zabbix/zabbix_server.conf
+      owner=root
+      group=root
+      mode=0644
+  - name: Update Apache2 Configuration
+    template:
+      src=files/apache2/zabbix.conf.j2
+      dest=/etc/apache2/conf-enabled/zabbix.conf
+      owner=root
+      group=root
+      mode=0644
+  - name: install python mysql bindings
+    apt: name=python-mysqldb state=installed
+  - name: Change MySQL Root Password
+    mysql_user: name=root password={{ db_root_password }}
+  - name: Upload MySQL Root Password
+    template:
+      src=files/mysql/.my.cnf.j2
+      dest=/root/.my.cnf
+      owner=root
+      group=root
+      mode=0644
+  - name: Create Zabbix Database User
+    mysql_user: login_user=root login_password={{ db_root_password }} name={{ db_user }} password={{ db_password }} priv={{ db_name }}.*:ALL state=present
+  - name: Check if DB exists
+    shell: mysql -u{{ db_user }} -p{{ db_password }} -h {{ db_host }} {{ db_name }} -e 'show tables;' | grep maintenances
+    ignore_errors: True
+    register: dbstatus
+  - name: Create Database
+    mysql_db: name={{ db_name }} state=present
+    when: dbstatus|failed
+  - name: Copy Zabbix Database Initialization File
+    shell: cp /usr/share/doc/zabbix-server-mysql/create.sql.gz /tmp/create.sql.gz
+    when: dbstatus|failed
+  - name: Decompress Database Initialization Script
+    shell: gzip -d -f create.sql.gz chdir=/tmp
+    when: dbstatus|failed
+  - name: Initialize Zabbix Database
+    mysql_db: name={{ db_name }} state=import target=/tmp/create.sql
+    when: dbstatus|failed
+  - name: Restart Zabbix Server
+    service: name=zabbix-server state=restarted
+  - name: Copy Zabbix FrontEnd Configuration
+    template:
+      src=files/zabbix/zabbix.conf.php.j2
+      dest=/usr/share/zabbix/conf/zabbix.conf.php
+      owner=root
+      group=root
+      mode=0644
+  - name: Restart Apache2
+    service: name=apache2 state=restarted
