@@ -42,13 +42,13 @@
       group=root
       mode=0644
   - name: Create Zabbix Database User
-    mysql_user: login_user=root login_password={{ db_root_password }} name={{ db_user }} password={{ db_password }} priv={{ db_name }}.*:ALL state=present
+    mysql_user: login_user=root login_password={{ db_root_password }} login_host={{ db_host }} name={{ db_user }} password={{ db_password }} priv={{ db_name }}.*:ALL state=present
   - name: Check if DB exists
     shell: mysql -u{{ db_user }} -p{{ db_password }} -h {{ db_host }} {{ db_name }} -e 'show tables;' | grep maintenances
     ignore_errors: True
     register: dbstatus
   - name: Create Database
-    mysql_db: name={{ db_name }} state=present
+    mysql_db: name={{ db_name }} login_user=root login_password={{ db_root_password }} login_host={{ db_host }} state=present
     when: dbstatus|failed
   - name: Copy Zabbix Database Initialization File
     shell: cp /usr/share/doc/zabbix-server-mysql/create.sql.gz /tmp/create.sql.gz
@@ -57,7 +57,7 @@
     shell: gzip -d -f create.sql.gz chdir=/tmp
     when: dbstatus|failed
   - name: Initialize Zabbix Database
-    mysql_db: name={{ db_name }} state=import target=/tmp/create.sql
+    mysql_db: name={{ db_name }} login_user=root login_password={{ db_root_password }} login_host={{ db_host }} state=import target=/tmp/create.sql
     when: dbstatus|failed
   - name: Restart Zabbix Server
     service: name=zabbix-server state=restarted
