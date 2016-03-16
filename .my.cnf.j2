@@ -1,0 +1,6 @@
+[client]
+user=root
+password={{ db_root_password }}
+{% if db_host != "localhost" %}
+host={{ db_host }}
+{% endif %}

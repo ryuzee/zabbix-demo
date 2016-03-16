@@ -1,0 +1,33 @@
+---
+- hosts: mysql-server
+  become: true
+  tasks:
+  - name: Update Cache
+    apt: update_cache=yes
+  - name: Install Packages
+    apt: name={{ item }} state=present
+    with_items:
+      - mysql-server
+      - libmysqlclient-dev
+  - name: Update Bind Address
+    shell: sed -i -e"s/^bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/" /etc/mysql/my.cnf
+  - name: Check if root has password
+    shell: mysql -uroot -e 'show databases;'
+    ignore_errors: True
+    register: no_password
+  - name: install python mysql bindings
+    apt: name=python-mysqldb state=installed
+  - name: Change MySQL Root Password
+    mysql_user: name=root password={{ db_root_password }}
+    when: no_password|success
+  - name: Upload MySQL Root Password
+    template:
+      src=files/mysql/.my.cnf.j2
+      dest=/root/.my.cnf
+      owner=root
+      group=root
+      mode=0644
+  - name: Create Remote User
+    mysql_user: name=root password={{ db_root_password }} host={{ zabbix_server_ip}} priv=*.*:ALL,GRANT state=present
+  - name: Restart MySQL Server
+    service: name=mysql state=restarted
