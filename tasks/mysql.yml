@@ -1,7 +1,4 @@
 ---
-- hosts: mysql-server
-  become: true
-  tasks:
   - name: Update Cache
     apt: update_cache=yes
   - name: Install Packages

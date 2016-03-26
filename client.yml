@@ -1,0 +1,5 @@
+---
+- hosts: zabbix-client
+  become: true
+  tasks:
+  - include: tasks/zabbix-agent.yml

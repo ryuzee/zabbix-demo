@@ -1,0 +1,6 @@
+---
+- hosts: mysql-server
+  become: true
+  tasks:
+  - include: tasks/mysql.yml
+  - include: tasks/zabbix-agent.yml
