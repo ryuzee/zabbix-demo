@@ -5,8 +5,12 @@ Vagrant.configure(2) do |config|
   box_name = 'opscode-ubuntu-14.04'
   log_level = 'v'
 
-  if Vagrant.has_plugin?("vagrant-vbguest") then
+  if Vagrant.has_plugin?('vagrant-vbguest')
     config.vbguest.auto_update = false
+  end
+
+  if Vagrant.has_plugin?('vagrant-cachier')
+    config.cache.scope = :box
   end
 
   config.vm.define 'mysql-server'.to_sym do |mysql|
